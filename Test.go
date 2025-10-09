@@ -2,7 +2,6 @@
 // This version is attempting to integrate the JSON file
 // If everything is working properly, I should be able to visit http://localhost:5000 and see the message below
 
-// Program starts here in package main
 package main
 
 // Import fiber library for framework
@@ -40,5 +39,4 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 }
