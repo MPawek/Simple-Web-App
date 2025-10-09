@@ -1,10 +1,16 @@
-// The purpose of this code is to see if my understanding of Go and Fiber is correct
+// The purpose of this code is to see if my understanding of Go and Fiber is correct.
+// This version is attempting to integrate the JSON file
 // If everything is working properly, I should be able to visit http://localhost:5000 and see the message below
 
 package main
 
-// Import fiber library
-import "github.com/gofiber/fiber/v2"
+// Import fiber library for framework
+// Import time library for timestamp
+import (
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+)
 
 // Main function
 func main() {
@@ -14,7 +20,18 @@ func main() {
 	// Define GET route for the URL, and send message when the route is accessed
 	// GET only retrieves data, likely what I need for the final version
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("My name is Montana Pawek")
+		// Get current time for timestamp
+		current_time := time.Now()
+
+		// Set response variable to hold map[string] data type - Golang's version of a type of matrix/array
+		response := make(map[string]string, 1)
+		// Set "message" element to print string
+		response["message"] = "My name is Montana Pawek"
+		// Set "timestamp" element to print time found as a string - necessary for data types
+		response["timestamp"] = current_time.String()
+
+		// Print the response array above as a JSON object
+		return c.JSON(response)
 	})
 
 	// The port where the application is listening
