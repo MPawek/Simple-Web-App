@@ -22,16 +22,15 @@ func main() {
 	// GET only retrieves data, likely what I need for the final version
 	app.Get("/", func(c *fiber.Ctx) error {
 		// Get current time for timestamp
-
-		// NOTE: May have to change syntax for map if UNIX or UTC time is preferred, as current time must be formatted as a string in order to work
 		current_time := time.Now()
 
-		// Set response variable to hold map[string]string data type (elements are strings and data are strings) - Golang's version of a type of matrix/array
-		response := make(map[string]string, 1)
-		// Set "message" element to print string
-		response["message"] = "My name is Montana Pawek"
-		// Set "timestamp" element to print time found as a string - necessary for data types
-		response["timestamp"] = current_time.String()
+		// Set response variable to hold fiber.Map data type, which allows us to use Unix timestamps alongside strings as data types (previously map[string]string was used, and was unable to do this)
+		response := (fiber.Map{
+			// Set "message" element to print string
+			"message": "My name is Montana Pawek",
+			// Set "timestamp" element to current_time converted to Unix
+			"timestamp": current_time.Unix(),
+		})
 
 		// Print the response map above as a JSON object
 		return c.JSON(response)
