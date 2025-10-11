@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // The purpose of this code is to see if my understanding of Go and Fiber is correct.
 // This version is attempting to integrate the JSON file
 // If everything is working properly, I should be able to visit http://localhost:5000 and see the message below
@@ -14,16 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-=======
-// The main base of the code
-// If everything is working properly, I should be able to visit http://localhost:5000 and see the message below
-
-package main
-
-// Import fiber library
-import "github.com/gofiber/fiber/v2"
-
->>>>>>> main
 // Main function
 func main() {
 	// Create new Fiber application
@@ -32,7 +21,6 @@ func main() {
 	// Define GET route for the URL, and send message when the route is accessed
 	// GET only retrieves data, likely what I need for the final version
 	app.Get("/", func(c *fiber.Ctx) error {
-<<<<<<< HEAD
 		// Get current time for timestamp
 		current_time := time.Now()
 
@@ -46,9 +34,6 @@ func main() {
 
 		// Print the response map above as a JSON object
 		return c.JSON(response)
-=======
-		return c.SendString("My name is Montana Pawek")
->>>>>>> main
 	})
 
 	// The port where the application is listening

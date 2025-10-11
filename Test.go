@@ -13,7 +13,7 @@ import (
 )
 
 // Main function
-func main() {
+// func main() {
 	// Create new Fiber application
 	app := fiber.New()
 
