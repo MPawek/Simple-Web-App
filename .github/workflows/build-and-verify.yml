@@ -1,14 +1,17 @@
 # Reference: https://github.com/marketplace/actions/build-and-push-docker-images
+# Goal is to build docker image, then run test against apprentice action to verify output
 
-name: Build Docker Image
+# First step, build the Docker image
+
+name: Build and Verify
 on: 
-  # Only run actions when main receives a pull request. This is only a placeholder, need to check Liatrio preference
+  # Run this action on either a push to any or a pull request to any branch:
+  push: 
   pull_request:
-    branches:
-      - main
+
 jobs:
-  # Job name:
-  Build:
+  # Job name: 
+  Build-Dockerfile:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -29,6 +32,13 @@ jobs:
           push: false
           # Name and tag for build image
           tags: user/simple-web-app:latest
+
+  # Second job name:
+  Verify-Functionality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: run tests
+        uses: liatrio/github-actions/apprentice-action@master
 
 
 
