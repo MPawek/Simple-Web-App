@@ -17,6 +17,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # In case we need to log into Docker Hub, this is the format needed
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          # Guide recommends using secrets for username and password. Secrets can be accessed in repo settings
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_PASSWORD}}
+
       # This step is not required, but was recommended
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -42,13 +50,6 @@ jobs:
 
 
 
-      # In case we need to log into Docker Hub, this is the format needed
-      #- name: Login to Docker Hub
-      #  uses: docker/login-action@v3
-      #  with:
-      #    # Guide recommends using secrets for username and password. Secrets can be accessed in repo settings
-      #    # Remove space between $ and { to reactivate secrets variables
-      #    username: $ {{secrets.DOCKER_USERNAME}}
-      #    password: $ {{secrets.DOCKER_PASSWORD}}
+      
 
       
