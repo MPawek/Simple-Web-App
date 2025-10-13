@@ -38,7 +38,7 @@ jobs:
           # This is currently the build-only version, need to check if it needs to be pushed as well
           push: true
           # Name and tag for build image
-          tags: montanapawek/simple-web-app:latest
+          tags: ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
       
 
   # Second job name:
