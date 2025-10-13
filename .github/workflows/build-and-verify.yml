@@ -38,7 +38,11 @@ jobs:
           # This is currently the build-only version, need to check if it needs to be pushed as well
           push: true
           # Name and tag for build image
-          tags: ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+          # Note that the image will be both the one labeled "latest", as well as be given it's own unqiue identifier
+          tags: |
+            ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+            ${{secrets.DOCKER_USERNAME}}/simple-web-app:build-${{ github.run_number}}
+
       
 
   # Second job name:
@@ -55,6 +59,7 @@ jobs:
       - name: Initialize port 80
         run: docker run -d --name simpleweb -p 80:80 ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
 
+      # Run the Liatrio tests
       - name: run tests
         uses: liatrio/github-actions/apprentice-action@master
 
