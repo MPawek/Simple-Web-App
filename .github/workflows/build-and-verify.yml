@@ -29,7 +29,7 @@ jobs:
           # Use Dockerfile to build
           file: ./Dockerfile
           # This is currently the build-only version, need to check if it needs to be pushed as well
-          push: false
+          push: true
           # Name and tag for build image
           tags: user/simple-web-app:latest
 

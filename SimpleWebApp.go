@@ -37,7 +37,7 @@ func main() {
 	})
 
 	// The port where the application is listening
-	err := app.Listen(":5000")
+	err := app.Listen(":80")
 	if err != nil {
 		panic(err)
 	}
