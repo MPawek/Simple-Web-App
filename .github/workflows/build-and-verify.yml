@@ -39,6 +39,8 @@ jobs:
           push: true
           # Name and tag for build image
           tags: ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+      # Debugging
+      - run: echo "TAG -> ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest"
 
   # Second job name:
   Verify-Functionality:
