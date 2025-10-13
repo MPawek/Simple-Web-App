@@ -1,8 +1,7 @@
 # Reference: https://github.com/marketplace/actions/build-and-push-docker-images
-# Goal is to build docker image, then run test against apprentice action to verify output
+# Goal is to build docker image, then run test using apprentice action to verify output
 
 # First step, build the Docker image
-
 name: Build and Verify
 on: 
   # Run this action on either a push to any or a pull request to any branch:
@@ -39,10 +38,12 @@ jobs:
           # This is currently the build-only version, need to check if it needs to be pushed as well
           push: true
           # Name and tag for build image
-          tags: user/simple-web-app:latest
+          tags: ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
 
   # Second job name:
   Verify-Functionality:
+    # Have to make sure this starts after Docker image has been built
+    needs: Build-Dockerfile
     runs-on: ubuntu-latest
     steps:
       - name: run tests
