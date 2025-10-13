@@ -53,7 +53,7 @@ jobs:
 
       # We have to map our container's port 80 and start it
       - name: Initialize port 80
-        run: docker run -d --name simpleweb \ -p 80:80 \ ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+        run: docker run -d --name simpleweb -p 80:80 ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
 
       - name: run tests
         uses: liatrio/github-actions/apprentice-action@master
