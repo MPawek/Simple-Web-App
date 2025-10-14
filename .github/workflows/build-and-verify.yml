@@ -61,8 +61,8 @@ jobs:
 
       # Run the Liatrio tests
       - name: run tests
-        uses: liatrio/github-actions/apprentice-action@apprentice-action-update
-          # MPawek/Simple-Web-App/apprentice-action@MPawek-Workflows-Test
+        uses: liatrio/github-actions/apprentice-action@604b4e04e06c0e98958e7960a4e7dbcc65ae948b
+          # liatrio/github-actions/apprentice-action@apprentice-action-update
           # liatrio/github-actions/apprentice-action@master
 
 
