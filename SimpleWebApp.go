@@ -9,7 +9,6 @@ package main
 // Import time library for timestamp
 import (
 	"time"
-
 	"github.com/gofiber/fiber/v2"
 )
 
