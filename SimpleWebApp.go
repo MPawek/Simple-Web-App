@@ -9,7 +9,6 @@ package main
 // Import time library for timestamp
 import (
 	"time"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -29,7 +28,7 @@ func main() {
 			// Set "message" element to print string
 			"message": "My name is Montana Pawek",
 			// Set "timestamp" element to current_time converted to Unix
-			"timestamp": current_time.UnixMilli(),
+      "timestamp": current_time.UnixMilli(),
 		})
 
 		// Print the response map above as a JSON object
