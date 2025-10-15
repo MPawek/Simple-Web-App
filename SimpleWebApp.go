@@ -28,7 +28,7 @@ func main() {
 			// Set "message" element to print string
 			"message": "My name is Montana Pawek",
 			// Set "timestamp" element to current_time converted to Unix
-			"timestamp": current_time.Unix(),
+      "timestamp": current_time.UnixMilli(),
 		})
 
 		// Print the response map above as a JSON object
@@ -36,7 +36,7 @@ func main() {
 	})
 
 	// The port where the application is listening
-	err := app.Listen(":5000")
+	err := app.Listen(":80")
 	if err != nil {
 		panic(err)
 	}

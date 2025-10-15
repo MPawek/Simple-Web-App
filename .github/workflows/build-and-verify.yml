@@ -1,0 +1,72 @@
+# Reference: https://github.com/marketplace/actions/build-and-push-docker-images
+# Goal is to build docker image, then run test using apprentice action to verify output
+
+# First step, build the Docker image
+name: Build and Verify
+on: 
+  # Run this action on either a push to any or a pull request to any branch:
+  push: 
+  pull_request:
+
+jobs:
+  # Job name: 
+  Build-Dockerfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # In case we need to log into Docker Hub, this is the format needed
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          # Guide recommends using secrets for username and password. Secrets can be accessed in repo settings
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_PASSWORD}}
+
+      # This step is not required, but was recommended
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          # Build context is in root file
+          context: .
+          # Use Dockerfile to build
+          file: ./Dockerfile
+          # This is currently the build-only version, need to check if it needs to be pushed as well
+          push: true
+          # Name and tag for build image
+          # Note that the image will be both the one labeled "latest", as well as be given it's own unqiue identifier
+          tags: |
+            ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+            ${{secrets.DOCKER_USERNAME}}/simple-web-app:build-${{ github.run_number}}
+
+      
+
+  # Second job name:
+  Verify-Functionality:
+    # Have to make sure this starts after Docker image has been built
+    needs: Build-Dockerfile
+    runs-on: ubuntu-latest
+    steps:
+      # Have to pull image we just pushed
+      - name: Pull image
+        run: docker pull ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+
+      # We have to map our container's port 80 and start it
+      - name: Initialize port 80
+        run: docker run -d --name simpleweb -p 80:80 ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+
+      # Run the Liatrio tests
+      - name: run tests
+        uses: liatrio/github-actions/apprentice-action@604b4e04e06c0e98958e7960a4e7dbcc65ae948b
+          # liatrio/github-actions/apprentice-action@apprentice-action-update
+          # liatrio/github-actions/apprentice-action@master
+
+
+
+      
+
+      
