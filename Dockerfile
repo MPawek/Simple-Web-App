@@ -1,6 +1,6 @@
 # For troubleshooting reference https://docs.docker.com/guides/golang/build-images/
 # Give the language the code is in
-FROM golang:1.25.4
+FROM golang:1.25.3-slim
 
 # Create a directory for COPY to put things into
 WORKDIR /app
