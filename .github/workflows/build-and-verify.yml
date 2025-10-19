@@ -4,9 +4,8 @@
 # First step, build the Docker image
 name: Build and Verify
 on: 
-  # Run this action on either a push to any or a pull request to any branch:
+  # Run this action on a push to any branch:
   push: 
-  pull_request:
 
 jobs:
   # Job name: 
