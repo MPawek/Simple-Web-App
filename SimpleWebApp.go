@@ -10,6 +10,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Demo
+
 // Main function
 func main() {
 	// Create new Fiber application
