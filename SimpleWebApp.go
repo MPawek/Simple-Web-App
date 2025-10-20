@@ -30,8 +30,6 @@ func main() {
 
 			// Set "timestamp" element to current_time converted to Unix
 			"timestamp": current_time.UnixMilli(),
-
-			"new_data": "Hello",
 		})
 
 		// Print the response map above as a JSON object
