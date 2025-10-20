@@ -7,10 +7,9 @@ package main
 // Import time library for timestamp
 import (
 	"time"
+
 	"github.com/gofiber/fiber/v2"
 )
-
-// Demo
 
 // Main function
 func main() {
@@ -18,17 +17,21 @@ func main() {
 	app := fiber.New()
 
 	// Define GET route for the URL, and send message when the route is accessed
-	// GET only retrieves data, likely what I need for the final version
+	// GET only retrieves data
 	app.Get("/", func(c *fiber.Ctx) error {
 		// Get current time for timestamp
 		current_time := time.Now()
 
 		// Set response variable to hold fiber.Map data type, which allows us to use Unix timestamps alongside strings as data types (previously map[string]string was used, and was unable to do this)
 		response := (fiber.Map{
+
 			// Set "message" element to print string
 			"message": "My name is Montana Pawek",
+
 			// Set "timestamp" element to current_time converted to Unix
-      		"timestamp": current_time.UnixMilli(),
+			"timestamp": current_time.UnixMilli(),
+
+			"new_data": "Hello",
 		})
 
 		// Print the response map above as a JSON object
