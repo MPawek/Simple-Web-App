@@ -6,6 +6,8 @@ This project is a lightweight backend web service built in **Go** using the **Fi
 The project was originally developed as part of a **take-home technical interview**, with a focus on code clarity, automation, and deployment readiness.
 
 ---
+[![Build and Verify](https://github.com/MPawek/Simple-Web-App/actions/workflows/build-and-verify.yml/badge.svg)](https://github.com/MPawek/Simple-Web-App/actions/workflows/build-and-verify.yml)
+---
 
 ## Key Features
 - RESTful API implemented in **Go (Fiber)**
