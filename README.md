@@ -55,7 +55,7 @@ This mirrors a real-world continuous delivery workflow and reduces the risk of b
 
 ### Option 1: Run with Go
 ```bash
-go run main.go
+go run SimpleWebApp.go
 ```
 
 ### Option 2: Run with Docker
