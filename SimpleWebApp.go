@@ -1,6 +1,7 @@
-// The purpose of this code is to see if my understanding of Go and Fiber is correct.
-// This version is attempting to integrate the JSON file
-// If everything is working properly, I should be able to visit http://localhost:5000 and see the message below
+// SimpleWebApp.go
+// Minimal Fiber web app that returns:
+// {"message":"My name is <Your Name>","timestamp":1234567890}
+// Visit http://localhost:5000 and see the message below
 
 // Program starts here in package main
 package main
