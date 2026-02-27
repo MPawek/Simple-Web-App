@@ -4,6 +4,8 @@
 # Implement health check?
 # Map ports so there is no chance of mismatch
 # Cleanup step
+# I see mentions of GitHub secrets having problems with forked PRs, need to check if this is an issue 
+
 
 # First step, build the Docker image
 name: Build and Verify
@@ -31,6 +33,10 @@ jobs:
           username: ${{secrets.DOCKER_USERNAME}}
           password: ${{secrets.DOCKER_PASSWORD}}
 
+      # Check go version from file, echo GO_VERSION=<contents>, append to GITHUB_ENV file
+      - name: Read Go Version
+        run: echo "GO_VERSION=$(cat .go-version)" >> $GITHUB_ENV
+
       # This step is not required, but was recommended
       - name: Set up Docker Buildx
       # Add before the docker login
@@ -48,9 +54,13 @@ jobs:
           # Name and tag for build image
           # Note that the image will be both the one labeled "latest", as well as be given it's own unqiue identifier
           # These may be different on other users, maybe need to fix?
+          # Maybe add more than just run number to tag to make it more unique?
           tags: |
             ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
             ${{secrets.DOCKER_USERNAME}}/simple-web-app:build-${{ github.run_number}}
+          # We pass in the go version from the file as an argument
+          build-args: |
+            GO_VERSION=${{ env.GO_VERSION }}
             
       
 
