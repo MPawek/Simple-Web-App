@@ -1,5 +1,6 @@
 # For troubleshooting reference https://docs.docker.com/guides/golang/build-images/
 # Give the language the code is in
+
 # Update language version as needed?
 # FROM golang:1.25.1
 

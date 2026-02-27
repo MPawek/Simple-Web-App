@@ -10,11 +10,12 @@
 # First step, build the Docker image
 name: Build and Verify
 on: 
+
   # Run this action on either a push to any or a pull request to any branch:
   # TODO: Implement some sort of lock so multiple pushes don't cause multiple builds, or only build on pushes to main or something like that
   # Load: true?
+
   push: 
-  pull_request:
 
 jobs:
   # Job name: 
