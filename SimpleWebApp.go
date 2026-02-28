@@ -1,9 +1,7 @@
-
 // SimpleWebApp.go
 // Minimal Fiber web app that returns:
 // {"message":"My name is <Your Name>","timestamp":1234567890}
 // Visit http://localhost:5000 and see the message below
-
 
 // Program starts here in package main
 package main
@@ -27,7 +25,8 @@ func main() {
 		// Get current time for timestamp
 		current_time := time.Now()
 
-		// Set response variable to hold fiber.Map data type, which allows us to use Unix timestamps alongside strings as data types (previously map[string]string was used, and was unable to do this)
+		// Set response variable to hold fiber.Map data type, which allows us to use Unix timestamps alongside strings as data types
+		// (previously map[string]string was used, and was unable to do this)
 		response := (fiber.Map{
 
 			// Set "message" element to print string

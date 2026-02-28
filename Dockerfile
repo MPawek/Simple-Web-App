@@ -1,11 +1,7 @@
 # For troubleshooting reference https://docs.docker.com/guides/golang/build-images/
 # Give the language the code is in
-
-# Update language version as needed?
-# FROM golang:1.25.1
-
-# Have to test if correct, but should read version number from .go file and use that to build the container
-# Initialize GO_VERSION to 1.25.1 as default
+# TODO: Have to test if correct, but should read version number from .go file and use that to build the container
+# Initialize GO_VERSION to 1.25.1 as default, but take .go-version number as argument
 ARG GO_VERSION=1.25.1
 FROM golang:${GO_VERSION} AS builder
 

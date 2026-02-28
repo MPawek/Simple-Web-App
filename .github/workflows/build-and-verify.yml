@@ -8,76 +8,71 @@
 
 
 # First step, build the Docker image
+# Run this action on any push or pull request, conditional statements later will separate only pushes to main for publishing
 name: Build and Verify
-on: 
+on:
+  pull_request:
+    branches: [ "**" ]
+  push:
+    branches: [ "**" ]
 
-  # Run this action on either a push to any or a pull request to any branch:
-  # TODO: Implement some sort of lock so multiple pushes don't cause multiple builds, or only build on pushes to main or something like that
-  # Load: true?
+# Concurrency check so we don't overwrite code being pushed by multiple people at the same time
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
-  push: 
+# Set IMAGE_NAME variable as we'll use it a bunch
+env:
+  IMAGE_NAME: simple-web-app
 
 jobs:
   # Job name: 
-  Build-Dockerfile:
+  CI:
+    # ---------------
+    # ALWAYS OCCURS
+    # ---------------
+
+    name: Build and Verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # In case we need to log into Docker Hub, this is the format needed
-      - name: Login to Docker Hub
-      # Bad practice to always log in, use if statement here to we only log in on push
-        uses: docker/login-action@v3
-        with:
-          # Guide recommends using secrets for username and password. Secrets can be accessed in repo settings
-          username: ${{secrets.DOCKER_USERNAME}}
-          password: ${{secrets.DOCKER_PASSWORD}}
-
-      # Check go version from file, echo GO_VERSION=<contents>, append to GITHUB_ENV file
+      # Check go version from file, echo GO_VERSION=<contents>, append to GITHUB_OUTPUT file
       - name: Read Go Version
-        run: echo "GO_VERSION=$(cat .go-version)" >> $GITHUB_ENV
+        id: goversion
+        run: echo "GO_VERSION=$(cat .go-version)" >> $GITHUB_OUTPUT
 
       # This step is not required, but was recommended
       - name: Set up Docker Buildx
-      # Add before the docker login
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push
+
+      - name: Build Docker image
+        id: build
         uses: docker/build-push-action@v6
         with:
           # Build context is in root file
           context: .
-          # Use Dockerfile to build
           file: ./Dockerfile
-          # This is currently the build-only version, need to check if it needs to be pushed as well
-          push: true
+          # Only publish container if there is a push to main
+          # load: true runs image locally for verification without having to push/pull
+          load: true
+          push: false
           # Name and tag for build image
-          # Note that the image will be both the one labeled "latest", as well as be given it's own unqiue identifier
-          # These may be different on other users, maybe need to fix?
-          # Maybe add more than just run number to tag to make it more unique?
+          # Remove latest, add run number and sha to make each unique
           tags: |
-            ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
-            ${{secrets.DOCKER_USERNAME}}/simple-web-app:build-${{ github.run_number}}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
           # We pass in the go version from the file as an argument
           build-args: |
-            GO_VERSION=${{ env.GO_VERSION }}
-            
-      
+            GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
-  # Second job name:
-  Verify-Functionality:
-    # Have to make sure this starts after Docker image has been built
-    needs: Build-Dockerfile
-    runs-on: ubuntu-latest
-    steps:
-      # Have to pull image we just pushed
-      - name: Pull image
-        run: docker pull ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+      - name: Run Container
+        run: |
+          TAG=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
 
-      # We have to map our container's port 80 and start it
-      - name: Initialize port 80
-        run: docker run -d --name simpleweb -p 80:80 ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+          # Map host :80 to container :8080 (adjust container port if your app listens elsewhere)
+          docker run -d --rm --name liatrio_verify -p 80:8080 -e PORT=8080 "$TAG"
 
       # Run the Liatrio tests
       - name: run tests
@@ -86,6 +81,57 @@ jobs:
         uses: liatrio/github-actions/apprentice-action@604b4e04e06c0e98958e7960a4e7dbcc65ae948b
           # liatrio/github-actions/apprentice-action@apprentice-action-update
           # liatrio/github-actions/apprentice-action@master
+
+
+      # ----------------------
+      # ONLY IF PUSH TO MAIN:
+      # ----------------------
+      - name: Login to Docker Hub
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          # Guide recommends using secrets for username and password. Secrets can be accessed in repo settings
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_PASSWORD}}
+
+      - name: Push Image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            GO_VERSION=${{ steps.goversion.outputs.go_version }}
+
+
+
+
+
+
+
+            
+      
+
+  # Second job name:
+  # Verify-Functionality:
+    # Have to make sure this starts after Docker image has been built
+    # needs: Build-Dockerfile
+    # runs-on: ubuntu-latest
+    # steps:
+      # Have to pull image we just pushed
+      # Use the run number and not the :latest version so if multiple people push at once, they won't use each other's image
+      # - name: Pull image
+      #   run: docker pull ${{secrets.DOCKER_USERNAME}}/simple-web-app:build-${{ github.run_number}}
+
+      # We have to map our container's port 80 and start it
+      # - name: Initialize port 80
+      #   run: docker run -d --name simpleweb -p 80:80 ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
+
+
 
 
 
