@@ -9,6 +9,7 @@ package main
 // Import fiber library for framework
 // Import time library for timestamp
 import (
+	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -41,9 +42,18 @@ func main() {
 	})
 
 	// The port where the application is listening
-	err := app.Listen(":80")
+	//	err := app.Listen(":80")
+	//	if err != nil {
+	//		panic(err)
+	//	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	err := app.Listen(":" + port)
 	if err != nil {
 		panic(err)
 	}
-
 }
