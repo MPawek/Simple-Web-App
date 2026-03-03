@@ -41,7 +41,7 @@ jobs:
       # Check go version from file, echo GO_VERSION=<contents>, append to GITHUB_OUTPUT file
       - name: Read Go Version
         id: goversion
-        run: echo "GO_VERSION=$(cat .go-version)" >> $GITHUB_OUTPUT
+        run: echo "go_version=$(cat .go-version)" >> $GITHUB_OUTPUT
 
       # This step is not required, but was recommended
       - name: Set up Docker Buildx
@@ -62,17 +62,33 @@ jobs:
           # Name and tag for build image
           # Remove latest, add run number and sha to make each unique
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
           # We pass in the go version from the file as an argument
           build-args: |
             GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
       - name: Run Container
         run: |
-          TAG=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
+          TAG=${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
 
           # Map host :80 to container :8080 (adjust container port if your app listens elsewhere)
           docker run -d --rm --name liatrio_verify -p 80:8080 -e PORT=8080 "$TAG"
+
+      # In some cases, app may not be ready right after container is created, so we add a wait step to check if app is responding before running tests
+      - name: Wait for app to be ready
+        run: |
+          for i in $(seq 1 20); do
+            if curl -sSf http://localhost/ > /dev/null; then
+              echo "App is ready."
+              exit 0
+            fi
+            echo "Waiting for app... ($i/20)"
+            sleep 1
+          done
+
+          echo "App did not become ready in time."
+          docker logs liatrio_verify || true
+          exit 1
 
       # Run the Liatrio tests
       - name: run tests
@@ -102,34 +118,22 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           build-args: |
             GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
-
+      # Run cleanup to close container in case of failure
+      - name: Cleanup container
+        if: always()
+        run: docker stop liatrio_verify || true
 
 
 
 
 
             
-      
 
-  # Second job name:
-  # Verify-Functionality:
-    # Have to make sure this starts after Docker image has been built
-    # needs: Build-Dockerfile
-    # runs-on: ubuntu-latest
-    # steps:
-      # Have to pull image we just pushed
-      # Use the run number and not the :latest version so if multiple people push at once, they won't use each other's image
-      # - name: Pull image
-      #   run: docker pull ${{secrets.DOCKER_USERNAME}}/simple-web-app:build-${{ github.run_number}}
-
-      # We have to map our container's port 80 and start it
-      # - name: Initialize port 80
-      #   run: docker run -d --name simpleweb -p 80:80 ${{secrets.DOCKER_USERNAME}}/simple-web-app:latest
 
 
 
