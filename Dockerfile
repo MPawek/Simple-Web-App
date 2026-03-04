@@ -1,6 +1,17 @@
 # For troubleshooting reference https://docs.docker.com/guides/golang/build-images/
 # Give the language the code is in
-FROM golang:1.25.3
+# TODO: Have to test if correct, but should read version number from .go file and use that to build the container
+# Initialize GO_VERSION to 1.25.1 as default, but take .go-version number as argument
+ARG GO_VERSION=1.25.1
+FROM golang:${GO_VERSION} AS builder
+
+# Move to multi-stage build
+# Don't run as root
+# Check for port match
+# Health check?
+# Specify port number
+# Have command return build info?
+# Cleanup step to remove build files?
 
 # Create a directory for COPY to put things into
 WORKDIR /app
@@ -10,6 +21,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy the Go source code, slash at the end is necessary for syntax reasons
+# Change to proper format so subfolders aren't missed
 COPY *.go ./
 
 # Build the file
