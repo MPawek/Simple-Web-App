@@ -9,16 +9,16 @@
 
 # First step, build the Docker image
 # Run this action on any push or pull request, conditional statements later will separate only pushes to main for publishing
-name: Build and Verify
+name: CI (PR) and CD (Push to Main)
 on:
   pull_request:
-    branches: [ "**" ]
+    branches: [ "main" ]
   push:
-    branches: [ "**" ]
+    branches: [ "main" ]
 
 # Concurrency check so we don't overwrite code being pushed by multiple people at the same time
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 # Set IMAGE_NAME variable as we'll use it a bunch
@@ -43,12 +43,11 @@ jobs:
         id: goversion
         run: echo "go_version=$(cat .go-version)" >> $GITHUB_OUTPUT
 
-      # This step is not required, but was recommended
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-
       - name: Build Docker image
+        # Locally built to run and test
         id: build
         uses: docker/build-push-action@v6
         with:
@@ -62,17 +61,15 @@ jobs:
           # Name and tag for build image
           # Remove latest, add run number and sha to make each unique
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
+            local/${{ env.IMAGE_NAME }}:${{ github.sha }}
           # We pass in the go version from the file as an argument
           build-args: |
             GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
       - name: Run Container
+        # Map host :80 to container :8080 (adjust container port if your app listens elsewhere)
         run: |
-          TAG=${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
-
-          # Map host :80 to container :8080 (adjust container port if your app listens elsewhere)
-          docker run -d --rm --name liatrio_verify -p 80:8080 -e PORT=8080 "$TAG"
+          docker run -d --rm --name liatrio_verify -e PORT=8080 -p 8080:8080 local/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       # In some cases, app may not be ready right after container is created, so we add a wait step to check if app is responding before running tests
       - name: Wait for app to be ready
@@ -98,30 +95,67 @@ jobs:
           # liatrio/github-actions/apprentice-action@apprentice-action-update
           # liatrio/github-actions/apprentice-action@master
 
-
+  CD: 
       # ----------------------
       # ONLY IF PUSH TO MAIN:
       # ----------------------
+    name: CD - Push to Docker Hub and Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    needs: CI
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Read Go Version
+        id: goversion
+        run: echo "go_version=$(cat .go-version)" >> $GITHUB_OUTPUT
+
+     - name: Compute Image Tag
+        id: img
+        run: |
+          echo "tag=${{ github.run_number }}-${{ github.sha }}" >> $GITHUB_OUTPUT
+
       - name: Login to Docker Hub
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           # Guide recommends using secrets for username and password. Secrets can be accessed in repo settings
           username: ${{secrets.DOCKER_USERNAME}}
           password: ${{secrets.DOCKER_PASSWORD}}
 
-      - name: Push Image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Build and Push Image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.run_number }}-${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.img.outputs.tag }}
             ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           build-args: |
             GO_VERSION=${{ steps.goversion.outputs.go_version }}
+
+      # Auth to GCP using service account JSON (fastest setup)
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Deploy to Cloud Run (versioned image)
+        run: |
+          IMAGE="docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.img.outputs.tag }}"
+          gcloud run deploy "${{ secrets.CLOUD_RUN_SERVICE }}" \
+            --image "$IMAGE" \
+            --region "${{ secrets.GCP_REGION }}" \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --quiet
 
       # Run cleanup to close container in case of failure
       - name: Cleanup container
