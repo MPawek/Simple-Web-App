@@ -26,13 +26,11 @@ env:
   IMAGE_NAME: simple-web-app
 
 jobs:
-  # Job name: 
   CI:
+    name: Build and Verify
     # ---------------
     # ALWAYS OCCURS
     # ---------------
-
-    name: Build and Verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -60,16 +58,13 @@ jobs:
           push: false
           # Name and tag for build image
           # Remove latest, add run number and sha to make each unique
-          tags: |
-            local/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          tags: local/${{ env.IMAGE_NAME }}:${{ github.sha }}
           # We pass in the go version from the file as an argument
-          build-args: |
-            GO_VERSION=${{ steps.goversion.outputs.go_version }}
+          build-args: GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
       - name: Run Container
         # Map host :80 to container :8080 (adjust container port if your app listens elsewhere)
-        run: |
-          docker run -d --rm --name liatrio_verify -e PORT=8080 -p 8080:8080 local/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        run: docker run -d --rm --name liatrio_verify -e PORT=8080 -p 80:8080 local/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       # In some cases, app may not be ready right after container is created, so we add a wait step to check if app is responding before running tests
       - name: Wait for app to be ready
@@ -92,14 +87,19 @@ jobs:
         # This path uses the last commit of a specific Liatrio branch called apprentice-action-update that should work regardless of where the branch goes or is named
         # Check and see if this needs to be updated
         uses: liatrio/github-actions/apprentice-action@604b4e04e06c0e98958e7960a4e7dbcc65ae948b
-          # liatrio/github-actions/apprentice-action@apprentice-action-update
-          # liatrio/github-actions/apprentice-action@master
+        # liatrio/github-actions/apprentice-action@apprentice-action-update
+        # liatrio/github-actions/apprentice-action@master
+
+      # Run cleanup to close container in case of failure
+      - name: Cleanup container
+        if: always()
+        run: docker stop liatrio_verify || true
 
   CD: 
-      # ----------------------
-      # ONLY IF PUSH TO MAIN:
-      # ----------------------
-    name: CD - Push to Docker Hub and Deploy to Cloud Run
+    name: Push and Deploy
+    # ----------------------
+    # ONLY IF PUSH TO MAIN:
+    # ----------------------
     runs-on: ubuntu-latest
     needs: CI
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -111,10 +111,9 @@ jobs:
         id: goversion
         run: echo "go_version=$(cat .go-version)" >> $GITHUB_OUTPUT
 
-     - name: Compute Image Tag
+      - name: Compute Image Tag
         id: img
-        run: |
-          echo "tag=${{ github.run_number }}-${{ github.sha }}" >> $GITHUB_OUTPUT
+        run: echo "tag=${{ github.run_number }}-${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -132,8 +131,7 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.img.outputs.tag }}
             ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-          build-args: |
-            GO_VERSION=${{ steps.goversion.outputs.go_version }}
+          build-args: GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
       # Auth to GCP using service account JSON (fastest setup)
       - name: Authenticate to Google Cloud
@@ -157,10 +155,6 @@ jobs:
             --port 8080 \
             --quiet
 
-      # Run cleanup to close container in case of failure
-      - name: Cleanup container
-        if: always()
-        run: docker stop liatrio_verify || true
 
 
 
