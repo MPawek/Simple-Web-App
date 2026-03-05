@@ -134,21 +134,17 @@ jobs:
           build-args: GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
       # Sign in to google cloud and automatically deploy
-      # If statements are temporary to allow testing of above.
       - name: Authenticate to Google Cloud
-        if: ${{ secrets.GCP_SA_KEY != '' }}
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
       - name: Set up gcloud
-        if: ${{ secrets.GCP_SA_KEY != '' }}
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy to Cloud Run (versioned image)
-        if: ${{ secrets.GCP_SA_KEY != '' }}
         run: |
           IMAGE="docker.io/${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.img.outputs.tag }}"
           gcloud run deploy "${{ secrets.CLOUD_RUN_SERVICE }}" \
