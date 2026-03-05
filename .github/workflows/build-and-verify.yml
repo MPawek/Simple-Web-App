@@ -1,5 +1,7 @@
 # Reference: https://github.com/marketplace/actions/build-and-push-docker-images
 
+# Test
+
 # First step, build the Docker image
 # Run this action on any push or pull request, conditional statements later will separate only pushes to main for publishing
 name: CI (PR/Push to Main) and CD (Push to Main)
