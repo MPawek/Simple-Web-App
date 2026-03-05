@@ -1,0 +1,11 @@
+# Ignore Git files
+.git
+.gitignore
+
+# Workflows are not needed at runtime
+.github
+
+# Ignore editor files
+.vscode
+
+# May have to add more based on local setup
