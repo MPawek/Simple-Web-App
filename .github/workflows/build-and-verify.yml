@@ -1,15 +1,8 @@
 # Reference: https://github.com/marketplace/actions/build-and-push-docker-images
-# Goal is to build docker image, then run test using apprentice action to verify output
-
-# Implement health check?
-# Map ports so there is no chance of mismatch
-# Cleanup step
-# I see mentions of GitHub secrets having problems with forked PRs, need to check if this is an issue 
-
 
 # First step, build the Docker image
 # Run this action on any push or pull request, conditional statements later will separate only pushes to main for publishing
-name: CI (PR) and CD (Push to Main)
+name: CI (PR/Push to Main) and CD (Push to Main)
 on:
   pull_request:
     branches: [ "main" ]
@@ -57,7 +50,7 @@ jobs:
           load: true
           push: false
           # Name and tag for build image
-          # Remove latest, add run number and sha to make each unique
+          # Removed latest, add run number and sha to make each unique
           tags: local/${{ env.IMAGE_NAME }}:${{ github.sha }}
           # We pass in the go version from the file as an argument
           build-args: GO_VERSION=${{ steps.goversion.outputs.go_version }}
@@ -68,6 +61,8 @@ jobs:
 
       # In some cases, app may not be ready right after container is created, so we add a wait step to check if app is responding before running tests
       - name: Wait for app to be ready
+        # Loop 20 times, checking if app is resonding. If it is, exit. If not, wait 2 seconds and try again.
+        # After 20 tries if we can't exit, print message and logs and fail test
         run: |
           for i in $(seq 1 20); do
             if curl -sSf http://localhost/ > /dev/null; then
@@ -75,7 +70,7 @@ jobs:
               exit 0
             fi
             echo "Waiting for app... ($i/20)"
-            sleep 1
+            sleep 2
           done
 
           echo "App did not become ready in time."
@@ -90,7 +85,7 @@ jobs:
         # liatrio/github-actions/apprentice-action@apprentice-action-update
         # liatrio/github-actions/apprentice-action@master
 
-      # Run cleanup to close container in case of failure
+      # Run cleanup to close container in case of failure -- always occurs, but if tests pass it will just stop a container that is already stopped
       - name: Cleanup container
         if: always()
         run: docker stop liatrio_verify || true
@@ -156,8 +151,39 @@ jobs:
             --port 8080 \
             --set-env-vars VERSION="${{ steps.img.outputs.tag }}" \
             --quiet
+        
+      # Extra Credit - Verify deployment of JSON change is deployed
+      # Checking for "version:" and correct tag
+      - name: Verify Deployed Change is Live
 
+        # Get/set google cloud info
+        # Set URL based on Cloud Run service info, then display
+        # Had to add same delay as above as sometimes Cloud Run took a bit to deploy
+        # Loop 20 times, checking if version is correct. If it is, print verified and exit. If not, wait 2 seconds and try again.
+        # After 20 tries if we haven't seen the correct response, print message and fail test
+        run: |
+          SERVICE="${{ secrets.CLOUD_RUN_SERVICE }}"
+          REGION="${{ secrets.GCP_REGION }}"
+          EXPECTED_VERSION="${{ steps.img.outputs.tag }}"
+          
+          URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
 
+          echo "Cloud Run URL: $URL"
+
+          for i in $(seq 1 20); do
+            RESP="$(curl -fsS "$URL" || true)"
+            echo "Attempt $i response: $RESP"
+
+            if echo "$RESP" | grep -F "\"version\":\"$EXPECTED_VERSION\"" > /dev/null; then
+              echo "Verified: deployed version is $EXPECTED_VERSION"
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          echo "ERROR: Deployed service did not return expected version: $EXPECTED_VERSION"
+          exit 1
 
 
 
