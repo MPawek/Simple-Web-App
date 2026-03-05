@@ -3,7 +3,7 @@
 // {"message":"My name is <Your Name>","timestamp":1234567890, "version": "<version>"}
 // Visit http://localhost:8080 and see the message below
 
-// Test
+// Still testing
 
 package main
 
