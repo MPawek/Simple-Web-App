@@ -1,10 +1,10 @@
 # For troubleshooting reference https://docs.docker.com/guides/golang/build-images/
-# Give the language the code is in
+
 # Initialize GO_VERSION to 1.25.1 as default for the build process, but take .go-version number as argument later
 ARG GO_VERSION=1.25.1
 
 # Multi-stage build
-# Smaller runtime image, safer security-wise
+# Smaller runtime image, safer security-wise, stripped to bare essentials of what the app needs to run
 
 #################################
 # Stage 1: Build the executable #

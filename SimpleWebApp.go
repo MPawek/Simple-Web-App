@@ -1,11 +1,11 @@
 // SimpleWebApp.go
 // Minimal Fiber web app that returns:
-// {"message":"My name is <Your Name>","timestamp":1234567890}
+// {"message":"My name is <Your Name>","timestamp":1234567890, "version": "<version>"}
 // Visit http://localhost:8080 and see the message below
 
-// Program starts here in package main
 package main
 
+// Import os library for environment variables
 // Import fiber library for framework
 // Import time library for timestamp
 import (
@@ -15,9 +15,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Main function
 func main() {
-	// Create new Fiber application
+
 	app := fiber.New()
 
 	// Define GET route for the URL, and send message when the route is accessed
