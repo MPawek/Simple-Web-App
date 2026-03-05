@@ -134,6 +134,7 @@ jobs:
           build-args: GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
       # Sign in to google cloud and automatically deploy
+      # Note, for scalability, would likely move to OIDC/Workload Identity Federation
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -153,6 +154,7 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --port 8080 \
+            --set-env-vars VERSION="${{ steps.img.outputs.tag }}" \
             --quiet
 
 
