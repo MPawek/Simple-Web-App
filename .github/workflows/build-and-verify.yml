@@ -1,7 +1,5 @@
 # Reference: https://github.com/marketplace/actions/build-and-push-docker-images
 
-# Test
-
 # First step, build the Docker image
 # Run this action on any push or pull request, conditional statements later will separate only pushes to main for publishing
 name: CI (PR/Push to Main) and CD (Push to Main)
@@ -52,13 +50,14 @@ jobs:
           load: true
           push: false
           # Name and tag for build image
-          # Removed latest, add run number and sha to make each unique
+          # Removed latest, add sha to make each unique
           tags: local/${{ env.IMAGE_NAME }}:${{ github.sha }}
           # We pass in the go version from the file as an argument
           build-args: GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
       - name: Run Container
         # Map host :80 to container :8080 (adjust container port if your app listens elsewhere)
+        # Make sure I know commmands here and what they do
         run: docker run -d --rm --name liatrio_verify -e PORT=8080 -p 80:8080 local/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       # In some cases, app may not be ready right after container is created, so we add a wait step to check if app is responding before running tests
