@@ -1,11 +1,19 @@
+# Not necessary at this point, but good practice to ignore files that are not needed in the container to speed up build time and reduce image size
 # Ignore Git files
 .git
 .gitignore
 
-# Workflows are not needed at runtime
+#Ignore Docker files
+.dockerignore
+Dockerfile
+
+# Workflows are not needed by container
 .github
 
 # Ignore editor files
 .vscode
+
+# Ignore ReadME
+README.md
 
 # May have to add more based on local setup
