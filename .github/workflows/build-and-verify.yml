@@ -53,8 +53,8 @@ jobs:
         # --rm: automatically remove container when it exits (good for testing to avoid leftover containers)
         # -name: gives the container a name so we can reference it in later steps (like logs or cleanup)
         # -e: sets environment variables in the container, in this case we set PORT to 8080 to match what our app listens on
-        # -p: maps port 8080 in the container to port 8080 on the host machine
-        run: docker run -d --rm --name liatrio_verify -e PORT=8080 -p 8080:8080 local/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        # -p: maps port 80 in the container to port 8080 on the host machine
+        run: docker run -d --rm --name liatrio_verify -e PORT=8080 -p 80:8080 local/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       # In some cases, app may not be ready right after container is created, so we add a wait step to check if app is responding before running tests
       - name: Wait for app to be ready
