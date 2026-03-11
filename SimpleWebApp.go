@@ -34,6 +34,8 @@ func main() {
 			"timestamp": time.Now().UnixMilli(),
 
 			"version": version,
+
+			"update": "This is the new version",
 		})
 
 		return c.JSON(response)
