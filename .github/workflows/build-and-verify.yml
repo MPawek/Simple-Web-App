@@ -123,7 +123,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           build-args: GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
-      # Note, for scalability, would likely move to OIDC/Workload Identity Federation to avoid private key use
+      # Note, for scalability, would likely move to OpenIDConnect/Workload Identity Federation to avoid private key for better security
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
