@@ -5,8 +5,6 @@
 
 package main
 
-//temp
-
 // os library for environment variables
 // fiber library for framework
 // time library for timestamp
@@ -36,6 +34,8 @@ func main() {
 			"timestamp": time.Now().UnixMilli(),
 
 			"version": version,
+
+			"update": "This is the new version",
 		})
 
 		return c.JSON(response)
