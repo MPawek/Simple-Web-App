@@ -1,20 +1,17 @@
 # Reference: https://github.com/marketplace/actions/build-and-push-docker-images
 
-# First step, build the Docker image
-# Run this action on any push or pull request, conditional statements later will separate only pushes to main for publishing
-name: CI (PR/Push to Main) and CD (Push to Main)
+name: CI/CD
 on:
   pull_request:
     branches: [ "main" ]
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]
 
 # Concurrency check so we don't overwrite code being pushed by multiple people at the same time
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Set IMAGE_NAME variable as we'll use it a bunch
 env:
   IMAGE_NAME: simple-web-app
 
@@ -29,7 +26,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Check go version from file, echo GO_VERSION=<contents>, append to GITHUB_OUTPUT file
       - name: Read Go Version
         id: goversion
         run: echo "go_version=$(cat .go-version)" >> $GITHUB_OUTPUT
@@ -42,31 +38,33 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          # Build context is in root file
           context: .
           file: ./Dockerfile
           # Only publish container if there is a push to main
           # load: true runs image locally for verification without having to push/pull
           load: true
           push: false
-          # Name and tag for build image
-          # Removed latest, add sha to make each unique
           tags: local/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          # We pass in the go version from the file as an argument
           build-args: GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
       - name: Run Container
-        # Map host :80 to container :8080 (adjust container port if your app listens elsewhere)
-        # Make sure I know commmands here and what they do
+        # Flags:
+        # -d: detached mode, runs container in background and prints container ID
+        # --rm: automatically remove container when it exits (good for testing to avoid leftover containers)
+        # -name: gives the container a name so we can reference it in later steps (like logs or cleanup)
+        # -e: sets environment variables in the container, in this case we set PORT to 8080 to match what our app listens on
+        # -p: maps port 80 in the container to port 8080 on the host machine
         run: docker run -d --rm --name liatrio_verify -e PORT=8080 -p 80:8080 local/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       # In some cases, app may not be ready right after container is created, so we add a wait step to check if app is responding before running tests
       - name: Wait for app to be ready
-        # Loop 20 times, checking if app is resonding. If it is, exit. If not, wait 2 seconds and try again.
-        # After 20 tries if we can't exit, print message and logs and fail test
+        # Flags: 
+        # -s: silent mode, don't show progress meter or error messages
+        # -S: when used with -s, makes curl show error messages if it fails
+        # -f: fail silently on server errors (400 and 500 status codes)
         run: |
           for i in $(seq 1 20); do
-            if curl -sSf http://localhost/ > /dev/null; then
+            if curl -s -S -f http://localhost:80/ > /dev/null; then
               echo "App is ready."
               exit 0
             fi
@@ -78,16 +76,12 @@ jobs:
           docker logs liatrio_verify || true
           exit 1
 
-      # Run the Liatrio tests
-      - name: run tests
-        # This path uses the last commit of a specific Liatrio branch called apprentice-action-update that should work regardless of where the branch goes or is named
-        # Check and see if this needs to be updated
+      - name: Run Tests
+        # This path uses the specific commit of the tests that should work; when the repo is updated we will change it to the comment below
         uses: liatrio/github-actions/apprentice-action@0b41561cca6822cc8d880fe0e49e7807a41fdf91
-        # liatrio/github-actions/apprentice-action@604b4e04e06c0e98958e7960a4e7dbcc65ae948b
-        # liatrio/github-actions/apprentice-action@apprentice-action-update
+        # The test that should be used is here
         # liatrio/github-actions/apprentice-action@master
 
-      # Run cleanup to close container in case of failure -- always occurs, but if tests pass it will just stop a container that is already stopped
       - name: Cleanup container
         if: always()
         run: docker stop liatrio_verify || true
@@ -115,7 +109,6 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          # Guide recommends using secrets for username and password. Secrets can be accessed in repo settings
           username: ${{secrets.DOCKER_USERNAME}}
           password: ${{secrets.DOCKER_PASSWORD}}
 
@@ -130,8 +123,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:latest
           build-args: GO_VERSION=${{ steps.goversion.outputs.go_version }}
 
-      # Sign in to google cloud and automatically deploy
-      # Note, for scalability, would likely move to OIDC/Workload Identity Federation
+      # Note, for scalability, would likely move to OIDC/Workload Identity Federation to avoid private key use
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -154,15 +146,7 @@ jobs:
             --set-env-vars VERSION="${{ steps.img.outputs.tag }}" \
             --quiet
         
-      # Extra Credit - Verify deployment of JSON change is deployed
-      # Checking for "version:" and correct tag
       - name: Verify Deployed Change is Live
-
-        # Get/set google cloud info
-        # Set URL based on Cloud Run service info, then display
-        # Had to add same delay as above as sometimes Cloud Run took a bit to deploy
-        # Loop 20 times, checking if version is correct. If it is, print verified and exit. If not, wait 2 seconds and try again.
-        # After 20 tries if we haven't seen the correct response, print message and fail test
         run: |
           SERVICE="${{ secrets.CLOUD_RUN_SERVICE }}"
           REGION="${{ secrets.GCP_REGION }}"
@@ -170,11 +154,8 @@ jobs:
           
           URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
 
-          echo "Cloud Run URL: $URL"
-
-          for i in $(seq 1 20); do
-            RESP="$(curl -fsS "$URL" || true)"
-            echo "Attempt $i response: $RESP"
+          for i in $(seq 1 10); do
+            RESP="$(curl -s -S -f "$URL" || true)"
 
             if echo "$RESP" | grep -F "\"version\":\"$EXPECTED_VERSION\"" > /dev/null; then
               echo "Verified: deployed version is $EXPECTED_VERSION"
